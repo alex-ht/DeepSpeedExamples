@@ -304,21 +304,6 @@ def main():
         batch['input_ids'] = tokens[:, sub_seq_start:sub_seq_end]
         batch['labels'] = batch['labels'][:, sub_seq_start:sub_seq_end]
         return batch
-    
-    def sp_eval_data_collator(features, return_tensors="pt"):
-        batch = default_data_collator(features, return_tensors)
-        seq_parallel_world_size = get_sequence_parallel_world_size()
-        seq_parallel_world_rank = get_sequence_parallel_rank()
-        tokens = batch['input_ids']
-        seq_length = tokens.size(1)
-        assert seq_length % seq_parallel_world_size == 0
-        sub_seq_length = seq_length // seq_parallel_world_size
-        sub_seq_start = seq_parallel_world_rank * sub_seq_length
-        sub_seq_end = (seq_parallel_world_rank + 1) * sub_seq_length
-
-        #tokens = tokens[:, sub_seq_start:sub_seq_end]
-        #attention_mask = batch['attention_mask'][:, sub_seq_start:sub_seq_end]
-        return {'input_ids': tokens, 'attention_mask': batch['attention_mask']}
         
     
     train_dataloader = DataLoader(train_dataset,
@@ -326,7 +311,7 @@ def main():
                                   sampler=train_sampler,
                                   batch_size=args.per_device_train_batch_size)
     eval_dataloader = DataLoader(eval_dataset,
-                                 collate_fn=sp_eval_data_collator,
+                                 collate_fn=sp_data_collator,
                                  sampler=eval_sampler,
                                  batch_size=args.per_device_eval_batch_size)
 
@@ -378,6 +363,7 @@ def main():
         dist_init_required=True)
 
     if args.gradient_checkpointing:
+        model.enable_input_require_grads()
         model.gradient_checkpointing_enable()
 
     # Train!
@@ -385,8 +371,8 @@ def main():
     print_rank_0(
         f"***** Evaluating perplexity, Epoch {0}/{args.num_train_epochs} *****",
         args.global_rank)
-    #perplexity, eval_loss = evaluation(model, eval_dataloader)
-    #print_rank_0(f"ppl: {perplexity}, loss: {eval_loss}", args.global_rank)
+    perplexity, eval_loss = evaluation(model, eval_dataloader)
+    print_rank_0(f"ppl: {perplexity}, loss: {eval_loss}", args.global_rank)
 
     for epoch in range(args.num_train_epochs):
         print_rank_0(
@@ -414,8 +400,8 @@ def main():
         print_rank_0(
             f"***** Evaluating perplexity, Epoch {epoch+1}/{args.num_train_epochs} *****",
             args.global_rank)
-        #perplexity, eval_loss = evaluation(model, eval_dataloader)
-        #print_rank_0(f"ppl: {perplexity}, loss: {eval_loss}", args.global_rank)
+        perplexity, eval_loss = evaluation(model, eval_dataloader)
+        print_rank_0(f"ppl: {perplexity}, loss: {eval_loss}", args.global_rank)
         model.tput_timer.update_epoch_count()
 
     if args.output_dir is not None:

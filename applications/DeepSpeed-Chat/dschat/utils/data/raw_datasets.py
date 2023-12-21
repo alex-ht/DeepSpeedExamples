@@ -800,10 +800,10 @@ class LongAlpacaDataset(PromptRawDataset):
         return dataset
 
     def get_prompt(self, sample):
-        return f"<s>[INST] {sample['instruction']} [/INST] "
+        return f"[INST] {sample['instruction']} [/INST] "
 
     def get_chosen(self, sample):
-        return f"{sample['output']} </s>"
+        return f"{sample['output']}"
 
     def get_rejected(self, sample):
         print(
@@ -812,7 +812,7 @@ class LongAlpacaDataset(PromptRawDataset):
         return None
 
     def get_prompt_and_chosen(self, sample):
-        return f"<s>[INST] {sample['instruction']} [/INST] {sample['output']} </s>"
+        return f"[INST] {sample['instruction']} [/INST] {sample['output']}"
 
     def get_prompt_and_rejected(self, sample):
         print(

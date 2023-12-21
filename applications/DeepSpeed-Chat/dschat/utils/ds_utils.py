@@ -21,6 +21,7 @@ def get_train_ds_config(offload,
                         max_out_tokens=512,
                         enable_tensorboard=False,
                         enable_mixed_precision_lora=False,
+                        zeropp=True,
                         tb_path="",
                         tb_name=""):
 
@@ -42,10 +43,14 @@ def get_train_ds_config(offload,
         "stage3_param_persistence_threshold": 1e4,
         "stage3_max_live_parameters": 3e7,
         "stage3_prefetch_bucket_size": 3e7,
-        "memory_efficient_linear": stage > 2
+        "memory_efficient_linear": stage > 3
     }
+    if zeropp:
+        zero_opt_dict["zero_quantized_weights"] = True
+        zero_opt_dict["zero_quantized_gradients"] = True
     if enable_mixed_precision_lora:
         zero_opt_dict["zero_quantized_nontrainable_weights"] = True
+    if zeropp or enable_mixed_precision_lora:
         if dist.get_world_size() != get_accelerator().device_count():
             zero_opt_dict["zero_hpz_partition_size"] = get_accelerator(
             ).device_count()

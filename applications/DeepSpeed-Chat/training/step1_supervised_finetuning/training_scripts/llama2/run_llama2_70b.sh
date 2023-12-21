@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=dschat-sft
-#SBATCH --nodes=4
+#SBATCH --nodes=16
 #SBATCH --ntasks-per-node=1         # crucial - only 1 task per dist per node!
 #SBATCH --cpus-per-task=32          # number of cores per tasks
 #SBATCH --gres=gpu:8                # number of gpus
@@ -50,20 +50,23 @@ if [ "$ZERO_STAGE" == "" ]; then
 fi
 mkdir -p $OUTPUT
 
-MODEL_NAME_OR_PATH=/work/u4005115/models/llama/Llama-2-7b-hf
+MODEL_NAME_OR_PATH=/work/u4005115/models/llama/Llama-2-70b-hf
+MODEL_NAME_OR_PATH=/work/u4005115/alex/llama2-70b-chat-36k-taishin-step2-ft/hf_model/
 # --data_path Yukang/LongAlpaca-12k \
+# --compute_fp32_loss \
+# --lora_module_name layers. \
+# --lora_learning_rate 3e-4 \
+# --only_optimize_lora \
 export CMD="training/step1_supervised_finetuning/long_alpaca.py \
    --data_path Yukang/LongAlpaca-12k \
-   --data_split 2,4,4 \
+   --data_split 8,1,1 \
    --model_name_or_path $MODEL_NAME_OR_PATH \
    --per_device_train_batch_size 1 \
    --per_device_eval_batch_size 1 \
    --max_seq_len 16384 \
-   --lora_learning_rate 3e-4 \
-   --only_optimize_lora \
-   --compute_fp32_loss \
+   --learning_rate 2e-5 \
    --weight_decay 0. \
-   --num_train_epochs 1  \
+   --num_train_epochs 2  \
    --gradient_accumulation_steps 1 \
    --lr_scheduler_type cosine \
    --num_warmup_steps 10 \
@@ -72,10 +75,9 @@ export CMD="training/step1_supervised_finetuning/long_alpaca.py \
    --zero_stage $ZERO_STAGE \
    --deepspeed \
    --lora_dim 0 \
-   --lora_module_name layers. \
-   --sp 8 \
+   --sp 64 \
    --output_dir $OUTPUT \
-   --print_loss \
+   --offload \
    "
 
 SRUN_ARGS=" \
