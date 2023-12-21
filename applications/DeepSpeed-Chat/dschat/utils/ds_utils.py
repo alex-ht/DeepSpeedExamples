@@ -42,7 +42,7 @@ def get_train_ds_config(offload,
         "stage3_param_persistence_threshold": 1e4,
         "stage3_max_live_parameters": 3e7,
         "stage3_prefetch_bucket_size": 3e7,
-        "memory_efficient_linear": False
+        "memory_efficient_linear": stage > 2
     }
     if enable_mixed_precision_lora:
         zero_opt_dict["zero_quantized_nontrainable_weights"] = True

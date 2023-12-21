@@ -770,3 +770,52 @@ class LmqgQagjaquadDataset(PromptRawDataset):
             f"Warning: dataset {self.dataset_name} does not include rejected response."
         )
         return None
+
+# Japanese dataset
+class LongAlpacaDataset(PromptRawDataset):
+
+    def __init__(self, output_path, seed, local_rank, dataset_name):
+        super().__init__(output_path, seed, local_rank, dataset_name)
+        self.dataset_name = "Yukang/LongAlpaca-12k"
+        self.dataset_name_clean = "long_alpaca-12k"
+
+    def get_train_data(self):
+        from .data_utils import get_raw_dataset_split_index
+        dataset = self.raw_datasets["train"]
+        index = get_raw_dataset_split_index(self.local_rank, self.output_path,
+                                            self.dataset_name_clean,
+                                            self.seed, "train_eval", "9,1", 0,
+                                            len(dataset))
+        dataset = Subset(dataset, index)
+        return dataset
+
+    def get_eval_data(self):
+        from .data_utils import get_raw_dataset_split_index
+        dataset = self.raw_datasets["train"]
+        index = get_raw_dataset_split_index(self.local_rank, self.output_path,
+                                            self.dataset_name_clean,
+                                            self.seed, "train_eval", "9,1", 1,
+                                            len(dataset))
+        dataset = Subset(dataset, index)
+        return dataset
+
+    def get_prompt(self, sample):
+        return f"<s>[INST] {sample['instruction']} [/INST] "
+
+    def get_chosen(self, sample):
+        return f"{sample['output']} </s>"
+
+    def get_rejected(self, sample):
+        print(
+            f"Warning: dataset {self.dataset_name} does not include rejected response."
+        )
+        return None
+
+    def get_prompt_and_chosen(self, sample):
+        return f"<s>[INST] {sample['instruction']} [/INST] {sample['output']} </s>"
+
+    def get_prompt_and_rejected(self, sample):
+        print(
+            f"Warning: dataset {self.dataset_name} does not include rejected response."
+        )
+        return None

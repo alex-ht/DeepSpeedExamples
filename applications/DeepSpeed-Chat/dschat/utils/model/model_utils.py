@@ -87,8 +87,11 @@ def create_hf_model(model_class,
                     tokenizer,
                     ds_config=None,
                     rlhf_training=False,
-                    dropout=None):
+                    dropout=None,
+                    ulysses=False):
     model_config = AutoConfig.from_pretrained(model_name_or_path)
+    if ulysses:
+        model_config._dist_attn_enabled = ulysses
     configure_dropout(model_config, dropout)
 
     # Note: dschf is defined in function scope to avoid global effects
